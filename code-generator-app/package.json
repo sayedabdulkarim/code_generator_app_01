@@ -1,0 +1,26 @@
+{
+  "name": "code-generator-app",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "npm@10.2.4",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "clean": "turbo clean",
+    "dev:web": "npm run dev --workspace=web",
+    "dev:api": "npm run dev --workspace=@code-generator/api"
+  },
+  "devDependencies": {
+    "turbo": "latest",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
