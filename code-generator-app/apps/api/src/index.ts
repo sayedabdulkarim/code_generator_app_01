@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { WebSocketServer } from 'ws';
 import http from 'http';
+import WebSocketService from './services/websocket.service';
 
 dotenv.config();
 
@@ -16,26 +17,22 @@ app.use(cors({
 
 app.use(express.json());
 
+// Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Create HTTP server
 const server = http.createServer(app);
 
+// Initialize WebSocket server
 const wss = new WebSocketServer({ server });
 
-wss.on('connection', (ws) => {
-  console.log('New WebSocket connection');
+// Initialize WebSocket service
+const wsService = new WebSocketService(wss);
 
-  ws.on('message', (message) => {
-    console.log('Received:', message.toString());
-  });
-
-  ws.on('close', () => {
-    console.log('WebSocket connection closed');
-  });
-});
-
+// Start server
 server.listen(port, () => {
-  console.log(`API server running at http://localhost:${port}`);
+  console.log(`🚀 API server running at http://localhost:${port}`);
+  console.log(`🔌 WebSocket server ready`);
 });

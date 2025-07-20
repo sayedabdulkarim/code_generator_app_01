@@ -15,7 +15,8 @@
     "dotenv": "^16.4.5",
     "ws": "^8.18.0",
     "@prisma/client": "^5.20.0",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "@code-generator/shared": "^1.0.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",

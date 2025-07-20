@@ -41,6 +41,6 @@ export const WebSocketMessageSchema = z.discriminatedUnion('type', [
   })
 ]);
 
-export type ChatMessage = z.infer<typeof ChatMessageSchema>;
-export type CreateProject = z.infer<typeof CreateProjectSchema>;
-export type WebSocketMessage = z.infer<typeof WebSocketMessageSchema>;
+export type ChatMessageType = z.infer<typeof ChatMessageSchema>;
+export type CreateProjectType = z.infer<typeof CreateProjectSchema>;
+export type WebSocketMessageType = z.infer<typeof WebSocketMessageSchema>;
