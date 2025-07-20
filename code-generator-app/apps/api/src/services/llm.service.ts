@@ -21,6 +21,8 @@ export class LLMService extends EventEmitter {
     this.apiKey = process.env.OPENROUTER_API_KEY || '';
     this.model = process.env.DEFAULT_MODEL || 'anthropic/claude-3.5-sonnet';
     
+    console.log('LLMService initialized with API key:', this.apiKey ? `${this.apiKey.substring(0, 10)}...` : 'NOT SET');
+    
     if (!this.apiKey) {
       console.warn('⚠️  OPENROUTER_API_KEY is not set - LLM features will be disabled');
     }
@@ -28,13 +30,39 @@ export class LLMService extends EventEmitter {
 
   async streamChat(messages: LLMMessage[], onToken: (token: string) => void): Promise<string> {
     if (!this.apiKey) {
-      // Simulate a response when no API key is set
-      const mockResponse = "I'm a mock response. Please set your OPENROUTER_API_KEY to use real AI responses.";
-      for (const char of mockResponse) {
-        onToken(char);
-        await new Promise(resolve => setTimeout(resolve, 10));
+      // Check if this is a JSON request (for analyzeProject)
+      const systemMessage = messages.find(m => m.role === 'system');
+      const needsJSON = systemMessage?.content.includes('JSON');
+      
+      if (needsJSON) {
+        // Return a mock JSON response for project analysis
+        const mockJSON = JSON.stringify({
+          projectName: "todo-app",
+          description: "A simple TODO application",
+          files: [
+            { path: "app/page.tsx", description: "Main page with TODO list" },
+            { path: "components/TodoList.tsx", description: "TODO list component" },
+            { path: "components/TodoItem.tsx", description: "Individual TODO item component" },
+            { path: "app/globals.css", description: "Global styles with Tailwind CSS" }
+          ]
+        });
+        for (const char of mockJSON) {
+          onToken(char);
+          await new Promise(resolve => setTimeout(resolve, 5));
+        }
+        return mockJSON;
+      } else {
+        // Return mock code
+        const mockCode = `// Mock generated code - Please set OPENROUTER_API_KEY in .env
+export default function Component() {
+  return <div>Mock Component</div>;
+}`;
+        for (const char of mockCode) {
+          onToken(char);
+          await new Promise(resolve => setTimeout(resolve, 5));
+        }
+        return mockCode;
       }
-      return mockResponse;
     }
     
     try {
@@ -101,18 +129,33 @@ export class LLMService extends EventEmitter {
   }
 
   async analyzeProject(prompt: string): Promise<{
-    suggestions: string[];
-    requirements: string[];
+    projectName: string;
+    description: string;
+    files: Array<{
+      path: string;
+      description: string;
+    }>;
   }> {
     const messages: LLMMessage[] = [
       {
         role: 'system',
-        content: `You are a helpful AI assistant that helps users build web applications. 
-When a user describes what they want to build, analyze their requirements and provide:
-1. A list of specific features and functionalities
-2. Technical requirements and dependencies
-3. Suggestions for improvements or missing features
-Format your response as JSON with "suggestions" and "requirements" arrays.`
+        content: `You are a code generation assistant. When a user describes what they want to build, analyze their requirements and provide a structured plan.
+You must respond with a JSON object containing:
+1. projectName: A suitable name for the project (kebab-case)
+2. description: A brief description of the project
+3. files: An array of files to generate, each with:
+   - path: The file path (e.g., "app/page.tsx", "components/TodoList.tsx")
+   - description: What this file should contain
+
+For a NextJS app with TypeScript and Tailwind CSS, typical files include:
+- app/page.tsx (main page)
+- app/layout.tsx (root layout)
+- app/globals.css (global styles)
+- components/* (React components)
+- lib/utils.ts (utility functions)
+- types/index.ts (TypeScript types)
+
+Only include files that are necessary for the requested functionality.`
       },
       {
         role: 'user',
@@ -128,19 +171,87 @@ Format your response as JSON with "suggestions" and "requirements" arrays.`
     try {
       const parsed = JSON.parse(response);
       return {
-        suggestions: parsed.suggestions || [],
-        requirements: parsed.requirements || []
+        projectName: parsed.projectName || 'my-app',
+        description: parsed.description || prompt,
+        files: parsed.files || []
       };
-    } catch {
-      // Fallback if JSON parsing fails
+    } catch (error) {
+      console.error('Failed to parse project analysis:', error);
+      // Fallback for basic projects
       return {
-        suggestions: [response],
-        requirements: []
+        projectName: 'my-app',
+        description: prompt,
+        files: [
+          { path: 'app/page.tsx', description: 'Main page component' },
+          { path: 'app/layout.tsx', description: 'Root layout with metadata' },
+          { path: 'app/globals.css', description: 'Global styles with Tailwind CSS' }
+        ]
       };
     }
   }
 
-  async generateCode(projectDescription: string, fileType: string): Promise<string> {
+  async generatePRD(prompt: string): Promise<any> {
+    if (!this.apiKey) {
+      return {
+        projectName: "Mock Counter App",
+        description: "A simple counter application built with Next.js",
+        features: [
+          "Increment counter button",
+          "Decrement counter button", 
+          "Reset counter button",
+          "Display current count",
+          "Persist count in local storage"
+        ],
+        technicalRequirements: [
+          "Next.js 14 with App Router",
+          "TypeScript for type safety",
+          "Tailwind CSS for styling",
+          "React hooks for state management",
+          "Local storage for persistence"
+        ],
+        dependencies: []
+      };
+    }
+
+    const messages: LLMMessage[] = [
+      {
+        role: 'system',
+        content: `You are a Product Requirements Document (PRD) generator. Generate a concise PRD for the requested application.
+        
+        Return ONLY valid JSON with this structure:
+        {
+          "projectName": "Application Name",
+          "description": "Brief description of the application",
+          "features": ["Feature 1", "Feature 2", ...],
+          "technicalRequirements": ["Requirement 1", "Requirement 2", ...],
+          "dependencies": ["dependency1", "dependency2"] // optional, only if specific packages are needed
+        }
+        
+        Focus on:
+        - Clear, actionable features
+        - Technical requirements using Next.js, TypeScript, and Tailwind CSS
+        - Only include dependencies if specific packages beyond the standard Next.js setup are needed`
+      },
+      {
+        role: 'user',
+        content: prompt
+      }
+    ];
+
+    let response = '';
+    await this.streamChat(messages, (token) => {
+      response += token;
+    });
+
+    try {
+      return JSON.parse(response);
+    } catch (error) {
+      console.error('Failed to parse PRD JSON:', error);
+      throw new Error('Failed to generate valid PRD');
+    }
+  }
+
+  async generateCode(filePath: string, fileDescription: string, projectAnalysis: any): Promise<string> {
     const messages: LLMMessage[] = [
       {
         role: 'system',
@@ -150,7 +261,17 @@ Only return the code without any explanations or markdown formatting.`
       },
       {
         role: 'user',
-        content: `Generate ${fileType} for: ${projectDescription}`
+        content: `Project: ${projectAnalysis.projectName}
+Description: ${projectAnalysis.description}
+
+Generate the code for file: ${filePath}
+File purpose: ${fileDescription}
+
+Remember:
+- Use NextJS 14 App Router conventions
+- Use TypeScript
+- Use Tailwind CSS for styling
+- Return only the code, no explanations`
       }
     ];
 

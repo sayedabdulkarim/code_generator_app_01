@@ -1,11 +1,12 @@
+import dotenv from 'dotenv';
+// Load environment variables first
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import { WebSocketServer } from 'ws';
 import http from 'http';
 import WebSocketService from './services/websocket.service';
-
-dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -18,7 +19,7 @@ app.use(cors({
 app.use(express.json());
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get('/health', (_, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
@@ -29,7 +30,7 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
 // Initialize WebSocket service
-const wsService = new WebSocketService(wss);
+new WebSocketService(wss);
 
 // Start server
 server.listen(port, () => {

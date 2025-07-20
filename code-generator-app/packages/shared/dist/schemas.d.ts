@@ -3,7 +3,7 @@ export declare const ChatMessageSchema: z.ZodObject<{
     id: z.ZodString;
     role: z.ZodEnum<["user", "assistant", "system"]>;
     content: z.ZodString;
-    timestamp: z.ZodDate;
+    timestamp: z.ZodEffects<z.ZodString, Date, string>;
 }, "strip", z.ZodTypeAny, {
     id: string;
     role: "user" | "assistant" | "system";
@@ -13,7 +13,7 @@ export declare const ChatMessageSchema: z.ZodObject<{
     id: string;
     role: "user" | "assistant" | "system";
     content: string;
-    timestamp: Date;
+    timestamp: string;
 }>;
 export declare const CreateProjectSchema: z.ZodObject<{
     prompt: z.ZodString;
@@ -25,13 +25,32 @@ export declare const CreateProjectSchema: z.ZodObject<{
     prompt: string;
     name?: string | undefined;
 }>;
+export declare const PRDSchema: z.ZodObject<{
+    projectName: z.ZodString;
+    description: z.ZodString;
+    features: z.ZodArray<z.ZodString, "many">;
+    technicalRequirements: z.ZodArray<z.ZodString, "many">;
+    dependencies: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+}, "strip", z.ZodTypeAny, {
+    projectName: string;
+    description: string;
+    features: string[];
+    technicalRequirements: string[];
+    dependencies?: string[] | undefined;
+}, {
+    projectName: string;
+    description: string;
+    features: string[];
+    technicalRequirements: string[];
+    dependencies?: string[] | undefined;
+}>;
 export declare const WebSocketMessageSchema: z.ZodDiscriminatedUnion<"type", [z.ZodObject<{
     type: z.ZodLiteral<"chat">;
     payload: z.ZodObject<{
         id: z.ZodString;
         role: z.ZodEnum<["user", "assistant", "system"]>;
         content: z.ZodString;
-        timestamp: z.ZodDate;
+        timestamp: z.ZodEffects<z.ZodString, Date, string>;
     }, "strip", z.ZodTypeAny, {
         id: string;
         role: "user" | "assistant" | "system";
@@ -41,7 +60,7 @@ export declare const WebSocketMessageSchema: z.ZodDiscriminatedUnion<"type", [z.
         id: string;
         role: "user" | "assistant" | "system";
         content: string;
-        timestamp: Date;
+        timestamp: string;
     }>;
 }, "strip", z.ZodTypeAny, {
     type: "chat";
@@ -57,7 +76,7 @@ export declare const WebSocketMessageSchema: z.ZodDiscriminatedUnion<"type", [z.
         id: string;
         role: "user" | "assistant" | "system";
         content: string;
-        timestamp: Date;
+        timestamp: string;
     };
 }>, z.ZodObject<{
     type: z.ZodLiteral<"terminal">;
@@ -136,8 +155,114 @@ export declare const WebSocketMessageSchema: z.ZodDiscriminatedUnion<"type", [z.
         status: "initializing" | "building" | "ready" | "error";
         message?: string | undefined;
     };
+}>, z.ZodObject<{
+    type: z.ZodLiteral<"startBuild">;
+    payload: z.ZodObject<{
+        prompt: z.ZodString;
+        prd: z.ZodOptional<z.ZodObject<{
+            projectName: z.ZodString;
+            description: z.ZodString;
+            features: z.ZodArray<z.ZodString, "many">;
+            technicalRequirements: z.ZodArray<z.ZodString, "many">;
+            dependencies: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+        }, "strip", z.ZodTypeAny, {
+            projectName: string;
+            description: string;
+            features: string[];
+            technicalRequirements: string[];
+            dependencies?: string[] | undefined;
+        }, {
+            projectName: string;
+            description: string;
+            features: string[];
+            technicalRequirements: string[];
+            dependencies?: string[] | undefined;
+        }>>;
+    }, "strip", z.ZodTypeAny, {
+        prompt: string;
+        prd?: {
+            projectName: string;
+            description: string;
+            features: string[];
+            technicalRequirements: string[];
+            dependencies?: string[] | undefined;
+        } | undefined;
+    }, {
+        prompt: string;
+        prd?: {
+            projectName: string;
+            description: string;
+            features: string[];
+            technicalRequirements: string[];
+            dependencies?: string[] | undefined;
+        } | undefined;
+    }>;
+}, "strip", z.ZodTypeAny, {
+    type: "startBuild";
+    payload: {
+        prompt: string;
+        prd?: {
+            projectName: string;
+            description: string;
+            features: string[];
+            technicalRequirements: string[];
+            dependencies?: string[] | undefined;
+        } | undefined;
+    };
+}, {
+    type: "startBuild";
+    payload: {
+        prompt: string;
+        prd?: {
+            projectName: string;
+            description: string;
+            features: string[];
+            technicalRequirements: string[];
+            dependencies?: string[] | undefined;
+        } | undefined;
+    };
+}>, z.ZodObject<{
+    type: z.ZodLiteral<"prd">;
+    payload: z.ZodObject<{
+        projectName: z.ZodString;
+        description: z.ZodString;
+        features: z.ZodArray<z.ZodString, "many">;
+        technicalRequirements: z.ZodArray<z.ZodString, "many">;
+        dependencies: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+    }, "strip", z.ZodTypeAny, {
+        projectName: string;
+        description: string;
+        features: string[];
+        technicalRequirements: string[];
+        dependencies?: string[] | undefined;
+    }, {
+        projectName: string;
+        description: string;
+        features: string[];
+        technicalRequirements: string[];
+        dependencies?: string[] | undefined;
+    }>;
+}, "strip", z.ZodTypeAny, {
+    type: "prd";
+    payload: {
+        projectName: string;
+        description: string;
+        features: string[];
+        technicalRequirements: string[];
+        dependencies?: string[] | undefined;
+    };
+}, {
+    type: "prd";
+    payload: {
+        projectName: string;
+        description: string;
+        features: string[];
+        technicalRequirements: string[];
+        dependencies?: string[] | undefined;
+    };
 }>]>;
 export type ChatMessageType = z.infer<typeof ChatMessageSchema>;
 export type CreateProjectType = z.infer<typeof CreateProjectSchema>;
+export type PRDType = z.infer<typeof PRDSchema>;
 export type WebSocketMessageType = z.infer<typeof WebSocketMessageSchema>;
 //# sourceMappingURL=schemas.d.ts.map
